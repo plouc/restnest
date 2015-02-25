@@ -19,6 +19,6 @@
   },
   "scripts": {
     "prepublish": "gulp lib",
-    "test": "gulp lib && mocha tests --reporter spec"
+    "test": "gulp lib && mocha ./tests --reporter spec"
   }
 }
