@@ -15,7 +15,7 @@ var r = require('restnest');
 var a = require('restnest/superagent_adapter');
 
 // create the client, declare resources
-var api = r.def(require('restnest/superagent_adapter'), {
+var api = r.def({
     path: 'https://api.github.com',
     headers: { Accept: 'application/vnd.github.v3+json' },
     resources: {
