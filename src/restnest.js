@@ -1,32 +1,43 @@
 var _ = require('lodash');
 
+const http_verbs      = ['HEAD', 'GET', 'PUT', 'POST', 'DELETE'];
+const param_locations = ['path', 'body', 'query'];
+const mergeable_props = ['method', 'headers', 'body', 'params'];
+
 function _throw(message) { throw new Error(message); }
 
-var restnest = {
+const restnest = {
     /**
      * Define a new resource
      */
     def({ method = 'GET', path, headers = {}, params = {}, schema = [], resources = {} }) {
         var def = {
-            method:    method,
+            method:    method.toUpperCase(),
             path:      path,
             headers:   headers,
             params:    params,
             resources: {}
         };
 
-        def.schema = schema.map(paramDef => {
-            if (!paramDef.key) {
-                _throw(`No key defined for parameter schema ${ JSON.stringify(paramDef) }`);
+        if (!_.contains(http_verbs, method)) {
+            _throw(`Invalid method '${ method }'`);
+        }
+
+        def.schema = schema.map(param_spec => {
+            if (!param_spec.key) {
+                _throw(`No key defined for parameter schema ${ JSON.stringify(param_spec) }`);
             }
-            return _.assign({ location: 'query', required: false }, paramDef);
+            if (param_spec.location && !_.contains(param_locations, param_spec.location)) {
+                _throw(`Invalid parameter spec location '${ param_spec.location }'`);
+            }
+            return _.assign({ location: 'query', required: false }, param_spec);
         });
 
         if (path) {
-            var pathParams = path.match(/:[a-zA-Z0-9]+/g);
-            if (pathParams !== null) {
-                def.schema = def.schema.concat(pathParams.map(pathParam => {
-                    return { key: pathParam.substr(1), required: true, location: 'path' };
+            var path_params = path.match(/:[a-zA-Z0-9]+/g);
+            if (path_params !== null) {
+                def.schema = def.schema.concat(path_params.map(path_param => {
+                    return { key: path_param.substr(1), required: true, location: 'path' };
                 }));
             }
         }
@@ -48,8 +59,8 @@ var restnest = {
   params: ${ JSON.stringify(resource.params) }
   schema: ${ JSON.stringify(resource.schema) }`);
 
-        _.forOwn(resource.resources, childResource => {
-            restnest.info(restnest.merge([resource, childResource]), stack);
+        _.forOwn(resource.resources, child_resource => {
+            restnest.info(restnest.merge([resource, child_resource]), stack);
         });
 
         return stack;
@@ -63,7 +74,9 @@ var restnest = {
      * @return {Object} augmented resource
      */
     add(root, id, def) {
-        if (root.resources[id]) { _throw(`resource with id "${ id }" already defined`); }
+        if (root.resources[id]) {
+            _throw(`Resource with id '${ id }' already defined`);
+        }
         root.resources[id] = restnest.def(def);
 
         return root;
@@ -76,7 +89,7 @@ var restnest = {
      */
     merge(resources) {
         // merge options for each resources from top to bottom
-        var merged = _.merge({}, ..._.map(resources, resource => _.pick(resource, ['method', 'headers', 'body', 'params'])));
+        var merged = _.merge({}, ..._.map(resources, resource => _.pick(resource, mergeable_props)));
 
         // append last resource resources
         merged.resources = _.cloneDeep(_.last(resources).resources);
@@ -94,9 +107,10 @@ var restnest = {
      * Collect each resources from the current tree and return a merged one.
      * @param {Object} root the definition tree
      * @param {String} path the path to the resource, dot separated
+     * @param {Object} params params to bind to the resulting resource
      * @param {Array.<Object>} stack collected resources
      */
-    with(root, path, stack = []) {
+    with(root, path, params = {}, stack = []) {
         var pathParts = path.split('.');
         if (pathParts.length === 0) {
             _throw('Invalid path given');
@@ -109,7 +123,7 @@ var restnest = {
         var headPath = _.first(pathParts);
 
         if (!root.resources[headPath]) {
-            _throw(`no resource defined for id "${ headPath }"`);
+            _throw(`No resource defined having id '${ headPath }'`);
         }
 
         var resource = root.resources[headPath];
@@ -120,11 +134,14 @@ var restnest = {
 
         // if there is no tail parts, we're done, we can return the stack
         if (restParts.length === 0) {
-            return restnest.merge(stack);
+            var merged = restnest.merge(stack);
+            _.merge(merged.params, params);
+
+            return merged;
         }
 
         // recursivity
-        return restnest.with(resource, _.rest(pathParts).join('.'), stack);
+        return restnest.with(resource, _.rest(pathParts).join('.'), params, stack);
     },
 
     call(resource, adapter, params = {}) {
@@ -133,15 +150,32 @@ var restnest = {
         resource = _.omit(resource, ['schema', 'resources']);
         _.merge(resource.params, params);
 
-        schema.forEach(paramSchema => {
-            if (paramSchema.required === true && !_.has(resource.params, paramSchema.key)) {
-                _throw(`Parameter '${ paramSchema.key }' must be defined`);
+        resource.query_params = {};
+
+        schema.forEach(param_schema => {
+            if (param_schema.required === true && !_.has(resource.params, param_schema.key)) {
+                _throw(`Parameter '${ param_schema.key }' must be defined`);
             }
 
+            switch (param_schema.location) {
+                case 'path':
+                    resource.path = resource.path.replace(`:${ param_schema.key }`, params[param_schema.key]);
 
+                    // remove consumed parameter
+                    resource.params = _.omit(resource.params, param_schema.key);
+                    break;
+
+                case 'query':
+                    break;
+
+                case 'body':
+                    break;
+            }
         });
 
         console.log(resource);
+
+        return adapter.call(resource);
     }
 };
 

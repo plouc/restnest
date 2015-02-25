@@ -1,6 +1,7 @@
 # RESTNEST
 
 [![NPM version](https://img.shields.io/npm/v/restnest.svg?style=flat-square)](https://www.npmjs.com/package/restnest)
+[![Travis CI](https://img.shields.io/travis/plouc/restnest.svg?style=flat-square)](https://travis-ci.org/plouc/restnest)
 
 RestNest is a small client targeting json REST APIs consumption.
 Be warned that it's a project to play with es6 features, so use it at your own risk :)

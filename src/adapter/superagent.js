@@ -3,7 +3,7 @@ var request = require('superagent');
 require('superagent-bluebird-promise');
 
 module.exports = {
-    doRequest({ method, path, headers, body }) {
+    call({ method, path, headers, body }) {
         var req = request[method.toLowerCase()](path);
 
         _.forOwn(headers, (value, key) => {
