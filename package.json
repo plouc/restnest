@@ -1,6 +1,6 @@
 {
   "name": "restnest",
-  "version": "0.1.2-beta",
+  "version": "0.1.3-beta",
   "description": "",
   "main": "restnest.js",
   "author": "Raphaël Benitte <benitteraphael+npm@gmail.com> (http://www.rbenitte.com/)",
