@@ -1,11 +1,8 @@
 {
-  "name": "rest-client",
-  "version": "1.0.0",
+  "name": "restnest",
+  "version": "0.1.0-beta",
   "description": "",
-  "main": "client.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "main": "restnest.js",
   "author": "Raphaël Benitte <benitteraphael+npm@gmail.com> (http://www.rbenitte.com/)",
   "license": "ISC",
   "devDependencies": {
@@ -18,5 +15,9 @@
     "lodash": "^3.3.0",
     "superagent": "^0.21.0",
     "superagent-bluebird-promise": "^0.6.0"
+  },
+  "scripts": {
+    "prepublish": "gulp lib",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
