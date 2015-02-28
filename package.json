@@ -6,7 +6,9 @@
   "author": "Raphaël Benitte (http://www.rbenitte.com/)",
   "license": "ISC",
   "devDependencies": {
+    "babel-eslint": "^1.0.12",
     "del": "^1.1.1",
+    "eslint": "^0.15.1",
     "gulp": "^3.8.11",
     "gulp-babel": "^4.0.0",
     "mocha": "^2.1.0",
@@ -20,6 +22,7 @@
   },
   "scripts": {
     "prepublish": "gulp lib",
+    "eslint": "eslint ./src/*",
     "test": "gulp lib && mocha ./tests --reporter spec"
   }
 }
